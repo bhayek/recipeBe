@@ -109,6 +109,187 @@ exports.byId = function(req, res){
 
 };
 
+//GET recipes/:id/edit -- retrieve 
+exports.byIdEdit = function(req, res){
+    let id = req.params.id;
+    let data = {};
+    let q1Recipe = `SELECT id, name recipeTitle, description, prepTime, totalTime, servings, isSharedId, dateCreated FROM recipes WHERE recipes.id = ${id} AND dateDeleted is null`;
+    let q2IngredientList = `SELECT IL.categoryId catId, RIC.name catName, RIC.sortOrder catSortOrder, 
+    ingN.name fieldValue, IL.id ingId, IL.sort ingSortOrder, IL.unitTypeId unitTypeId,
+    IL.amount unitTypeAmount
+    
+    from ingList IL
+    
+    left join recipeIngCats RIC
+    ON RIC.id=IL.categoryId
+    
+    left join ingNames ingN
+    ON ingN.id=IL.nameId
+    
+    
+    WHERE IL.recipeId = ${id}
+    order by IL.categoryId, IL.sort`
+
+    q3Photos = `select * from photos p
+
+    where p.recipeId = ${id}`
+    q4Instructions = `Select r.name recipeName, ri.sortOrder instructSortOrder, ri.userId createdBy, ri.step step, ri.recipeIngCatId CatId, rc.name recipeIngredientCat, rc.sortOrder catSortOrder, ri.stepDurationSec time from recipeInstructions ri
+
+    left join recipes r
+    ON r.id=ri.recipeId
+    
+    left join recipeIngCats rc
+    ON rc.id=ri.recipeIngCatId
+    
+    where recipeId = ${id}
+    
+    order by catSortOrder, instructSortOrder asc`
+    db.query(q1Recipe, function(err, q1RecipeData, fields){
+        if (err) throw err;
+
+        data = q1RecipeData[0] || [];
+        if(!q1RecipeData[0]){
+            res.json({
+                status: 404,
+                message: `Recipe ${id} not found`
+            })
+        } else {
+            data.photos = []
+            db.query(q2IngredientList, function(err, q2IngredientListData,fields){
+                if (err) throw err;
+                db.query(q3Photos, function(err, q3PhotosData,fields) {
+                    if(err) throw err;
+                    db.query(q4Instructions, function(err,q4InstructionsData,fields) {
+                        if(err) throw err;
+                        const ingForm2 = []
+                        q2IngredientListData.forEach(ing => {
+                            if(ingForm2.length < ing.catSortOrder +1) {
+                               ingForm2.push({
+                                       cat: ing.catName,
+                                       catId: ing.catId,
+                                       sort: ing.catSortOrder,
+                                       ingredients: []
+                                    }) 
+                                }
+                                ingForm2[ing.catSortOrder].ingredients.push({
+                                    fieldValue: ing.fieldValue,
+                                    ingId: ing.ingId,
+                                    sortOrder: ing.ingSortOrder,
+                                    unitTypeId: ing.unitTypeId,
+                                    unitTypeAmount: ing.unitTypeAmount,
+                                    description:''
+                                })
+                        })
+
+                            data.ingForm2 = ingForm2
+                            //data.ingredients = q2IngredientListData || [];
+                            //data.photos = q3PhotosData || [];
+                            //data.instructions = q4InstructionsData || [];
+                            // console.log(data)
+                            //data
+                            res.json({
+                                status: 200,
+                                data,
+                                message: `Recipe returned successfully.`
+                        })
+                    })
+                })
+            })
+        }
+
+    })
+
+};
+
+
+// //POST recipes/:id/edit -- update existing recipe 
+// exports.byIdEdit = function(req, res){
+
+//    db.query(sql,function(err,res,){
+
+//    })
+
+
+
+// };
+
+
+//GET recipestest/:id -- retrieve ONE recipe
+exports.byIdTest = function(req, res){
+    res.json({ 
+        data: {
+            recipeTitle: 'recipe title',
+            prepTime: '11',
+            totalTime: '30',
+            description: 'I am a description--',
+            ingForm2:[
+                {
+                    cat: "chili", 
+                    catId: null, 
+                    sortOrder: 0, 
+                    ingredients:[
+                        {
+                            fieldValue: "ground beef", 
+                            ingId: null, 
+                            sortOrder: 0,
+                            unitTypeId: 9,  
+                            // unitType: "pound", 
+                            unitTypeAmount: .5, 
+                            description: "cooked" 
+                        },
+                        {   
+                            fieldValue: "bell pepper", 
+                            ingId: null, 
+                            sortOrder: 1,
+                            unitTypeId: null,  
+                            // unitType: "", 
+                            unitTypeAmount: 1, 
+                            description: "" 
+                        }
+                    ]
+                },
+                {
+                    cat: "garnish", 
+                    catId: null, 
+                    sortOrder: 1, 
+                    ingredients:[
+                        {
+                            fieldValue: "cilantro", 
+                            ingId: null, 
+                            sortOrder: 0,
+                            unitTypeId: 4,  
+                            unitType: "tsp", 
+                            unitTypeAmount: 2, 
+                            description: "" 
+                        },
+                        {
+                            fieldValue: "cheese", 
+                            ingId: null, 
+                            sortOrder: 1, 
+                            unitTypeId: 2, 
+                            // unitType: "ounce", 
+                            unitTypeAmount: 5, 
+                            description: "grated" 
+                        }, 
+                        {
+                            fieldValue: "cheese", 
+                            ingId: null, 
+                            sortOrder: 2, 
+                            unitTypeId: 2, 
+                            // unitType: "ounce",
+                            unitTypeAmount: 5, 
+                            description: "grated" 
+                        }   
+                    ]
+                }
+            ],
+            steps:{}
+        },
+        errors: {}
+    })
+
+};
+
 // POST -- create NEW recipe
 exports.create = (req, res) => {
     let sql = 

@@ -4,6 +4,7 @@ const express = require('express'),
     router = express.Router(),
     user = require('../controllers/user')
     recipes = require('../controllers/recipes')
+    recipeSave = require('../controllers/recipeSave')
     ingredients = require('../controllers/ingredients')
     lookup = require('../controllers/lookup')
 const url = require('url')
@@ -47,10 +48,15 @@ router.get('/users/all', mw.auth, user.all)
 router.post('/recipes/create', mw.auth, recipes.create)
 router.post('/recipes/createInstruction', mw.auth, recipes.createInstruction)
 
+//RECIPESAVE => POST ROUTES
+router.post('/recipes/:id/update', mw.auth, recipeSave.update)
+
 //RECIPE => GET ROUTES
 router.get('/recipes/all', mw.auth, recipes.all)
 router.get('/recipes/active', [mw.auth], recipes.active)
 router.get('/recipes/:id', mw.auth, recipes.byId)
+router.get('/recipestest/:id', mw.auth, recipes.byIdTest) // returns static json
+router.get('/recipes/:id/edit', mw.auth, recipes.byIdEdit)
 
 
 //INGREDIENTS => POST ROUTES
@@ -62,6 +68,7 @@ router.get('/ingredients/all', mw.auth, ingredients.all)
 
 //LOOKUP => GET ROUTES
 router.get('/lookup/genders', mw.auth, lookup.genders)
+router.get('/lookup/units', mw.auth, lookup.units)
 
 
 

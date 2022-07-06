@@ -23,6 +23,13 @@ db = mysql.createConnection({
     database: database
 })
 
+db.connect(err => {
+    if(err){
+        console.log(err);
+    }
+    console.log('MySql Connected')
+});
+
 // use the modules
 app.use(cors())
 app.use(bodyParser.json());
@@ -37,11 +44,14 @@ const router = require('../routes/routes');
 app.use('/api', router);
 
 // Handling Errors
-app.use((error, req, res, next) => {
-    error.statusCode = err.statusCode || 500;
+app.use((err, req, res, next) => {
+    err.statusCode = err.statusCode || 500;
     err.message = err.message || "Internal Server Error";
     res.status(err.statusCode).json({
-        message: err.message
+        message: err.message,
+        statusCode: err.statusCode,
+        stack: err.stack
+        //err
     })
 })
 
